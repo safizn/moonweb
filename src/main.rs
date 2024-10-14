@@ -45,21 +45,20 @@ struct Args {
     #[clap(short, long)]
     model_id: Option<String>,
 
-    #[clap(short='h', long)]
+    #[clap(short = 'h', long)]
     temp: Option<f64>,
 
-    #[clap(short='t', long)]
+    #[clap(short = 't', long)]
     top_p: Option<f64>,
 
-    #[clap(short='e', long)]
+    #[clap(short = 'e', long)]
     master_port: Option<u32>,
-    
 }
 
 fn main() {
     let args = Args::parse();
-    let server_type = args.server.unwrap_or_else(||ServerNode::Web);
-    
+    let server_type = args.server.unwrap_or_else(|| ServerNode::Web);
+
     match server_type {
         ServerNode::Web => {
             dioxus_logger::init(Level::INFO).expect("logger failed to init");
@@ -67,30 +66,24 @@ fn main() {
             launch(app);
         }
         ServerNode::Master => {
-            #[cfg(not(target_arch = "wasm32"))] 
+            #[cfg(not(target_arch = "wasm32"))]
             {
                 let runtime = tokio::runtime::Runtime::new().expect("Create runtime failed!");
                 runtime.block_on(master_server());
             }
-            
         }
         ServerNode::Worker => {
-            #[cfg(not(target_arch = "wasm32"))] 
+            #[cfg(not(target_arch = "wasm32"))]
             {
-            let model_id = args
-                .model_id
-                .unwrap_or_else(|| "meta-llama/Meta-Llama-3-8B-Instruct".into());
-            let temp = args.temp.unwrap_or_else(|| 0.6f64);
-            let top_p = args.top_p.unwrap_or_else(|| 0.9f64);
-            let ipc_name = args.ipc_name.unwrap();
-            let runtime = tokio::runtime::Runtime::new().expect("Create runtime failed!");
-            runtime.block_on(worker_server(
-                ipc_name,
-                model_id.clone(),
-                temp,
-                top_p,
-            ));
-        }
+                let model_id = args
+                    .model_id
+                    .unwrap_or_else(|| "meta-llama/Meta-Llama-3-8B-Instruct".into());
+                let temp = args.temp.unwrap_or_else(|| 0.6f64);
+                let top_p = args.top_p.unwrap_or_else(|| 0.9f64);
+                let ipc_name = args.ipc_name.unwrap();
+                let runtime = tokio::runtime::Runtime::new().expect("Create runtime failed!");
+                runtime.block_on(worker_server(ipc_name, model_id.clone(), temp, top_p));
+            }
         }
     }
 }

@@ -12,8 +12,8 @@ candle-core = { version = "0.7.2", features = ["cuda"] }
 candle-nn = { version = "0.7.2", features = ["cuda"] }
 tokenizers = { version = "0.19.1", features = ["onig"] }
 
-half = { optional = true }
-hf-hub = { features = ["tokio"] }
+half = { version = "2.4.1", optional = true }
+hf-hub = { version = "0.3.2", features = ["tokio"] }
 clap = { version = "4.5.7", features = ["derive"] }
 anyhow = "1.0.86"
 serde = { version = "1.0.203", features = ["derive"] }

@@ -23,6 +23,7 @@ build_models() {
     build_in_folders() {
     for folder in "$@"; do
         pushd "$folder"
+        # cargo clean
         cargo build --release
         popd
     done
@@ -48,8 +49,6 @@ setup() {
         # - dioxus https://dioxuslabs.com/learn/0.4/CLI/installation/
         cargo install dioxus-cli 
     
-    ./script.sh build_models
-
     # install miniconda
     # https://docs.anaconda.com/miniconda/
     {
@@ -63,14 +62,54 @@ setup() {
     }
 
     conda create -n python-llm-virtual-env python=3.9 anaconda
-    conda activate python-llm-virtual-env
-    export PYO3_PYTHON=$(which python)
+    # pip install torch torchvision torchaudioy
+    conda install pytorch torchvision cpuonly -c pytorch 
+    conda install diffusers transformers sentencepiece
+    pip install git+https://github.com/huggingface/diffusers.git # Fix for error with importing `diffusers` package
+    conda install -c nvidia cuda-python
+    
+    {
+        # FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE pip install flash-attn --no-build-isolation
+        # pip install flash-attn 
+        pushd tmp
+        git clone https://github.com/Dao-AILab/flash-attention.git
+        cd flash-attention
+        export FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE
+        python setup.py install
+        popd
+    }
+
+    conda remove pytorch torchvision torchaudio cudatoolkit 
+    pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
+    conda install pytorch torchvision cudatoolkit -c pytorch
+    
+
+    # anaconda instead
+    {
+        mkdir -p ./tmp/
+        pushd tmp
+        apt-get install libgl1-mesa-glx libegl1-mesa libxrandr2 libxrandr2 libxss1 libxcursor1 libxcomposite1 libasound2 libxi6 libxtst6
+        curl -O https://repo.anaconda.com/archive/Anaconda3-2024.02-1-Linux-x86_64.sh
+        chmod +x ./Anaconda3-2024.02-1-Linux-x86_64.sh
+        ./Anaconda3-2024.02-1-Linux-x86_64.sh
+        conda config --set auto_activate_base True
+        popd
+    }
+
 }
 
 
+build() { 
+    conda activate python-llm-virtual-env
+    export PYO3_PYTHON=$(which python)
+    export LD_LIBRARY_PATH=/home/unixuser/miniconda3/envs/python-llm-virtual-env/lib/:$LD_LIBRARY_PATH
+    ./script.sh build_models
+    
+    dx build --release
+}
+
 run() { 
     cargo run -r -- --server master
-    dx build --release
     dx serve --release
 }
 
