@@ -5,13 +5,13 @@ use clap::Parser;
 use candle_transformers::models::qwen2::{Config as ConfigBase, ModelForCausalLM as ModelBase};
 
 use candle_core::{DType, Device, Tensor};
-use moonweb::token_output_stream::TokenOutputStream;
 use candle_nn::VarBuilder;
 use candle_transformers::generation::LogitsProcessor;
 use hf_hub::{api::sync::Api, Repo, RepoType};
+use moonweb::data::{Message, Request, Role};
+use moonweb::ipc::{accept, OutputStream};
+use moonweb::token_output_stream::TokenOutputStream;
 use tokenizers::Tokenizer;
-use moonweb::ipc::{accept,OutputStream};
-use moonweb::data::{Request,Message,Role};
 
 struct TextGeneration {
     model: ModelBase,
@@ -45,7 +45,7 @@ impl TextGeneration {
         }
     }
 
-    fn run(&mut self,output: &impl OutputStream,prompt: &str, sample_len: usize) -> Result<()> {
+    fn run(&mut self, output: &impl OutputStream, prompt: &str, sample_len: usize) -> Result<()> {
         self.model.clear_kv_cache();
         self.tokenizer.clear();
         let mut tokens = self
@@ -60,7 +60,6 @@ impl TextGeneration {
                 print!("{t}")
             }
         }
-        
 
         let mut generated_tokens = 0usize;
         let eos_token = match self.tokenizer.get_token("<|endoftext|>") {
@@ -103,7 +102,7 @@ impl TextGeneration {
         if let Some(rest) = self.tokenizer.decode_rest().map_err(E::msg)? {
             print!("{rest}");
         }
-        
+
         println!(
             "\n{generated_tokens} tokens generated ({:.2} token/s)",
             generated_tokens as f64 / dt.as_secs_f64(),
@@ -112,17 +111,15 @@ impl TextGeneration {
     }
 }
 
-
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    
     #[clap(short, long)]
     server: String,
 
     #[clap(short, long)]
     ipc_name: String,
-    
+
     #[arg(long)]
     temperature: Option<f64>,
 
@@ -138,7 +135,7 @@ struct Args {
     #[arg(long, short = 'n', default_value_t = 10000)]
     sample_len: usize,
 
-    #[arg(long,default_value = "Qwen/Qwen2-7B")]
+    #[arg(long, default_value = "Qwen/Qwen2-7B")]
     model_id: Option<String>,
 
     #[arg(long, default_value = "main")]
@@ -159,9 +156,7 @@ struct Args {
     repeat_last_n: usize,
 }
 
-
-
-fn messages_chat_template(msg_list: &Vec<Message>,system_prompt:&str)->String {
+fn messages_chat_template(msg_list: &Vec<Message>, system_prompt: &str) -> String {
     let mut history = String::new();
     history.push_str("<|im_start|>system\n");
     history.push_str(system_prompt);
@@ -169,9 +164,9 @@ fn messages_chat_template(msg_list: &Vec<Message>,system_prompt:&str)->String {
     for msg in msg_list {
         history.push_str("<|im_start|>");
         if msg.role == Role::User {
-           history.push_str("user\n");
+            history.push_str("user\n");
         } else {
-           history.push_str("assistant\n");
+            history.push_str("assistant\n");
         }
         history.push_str(msg.content.as_str());
         history.push_str("<|im_end|>\n");
@@ -181,7 +176,6 @@ fn messages_chat_template(msg_list: &Vec<Message>,system_prompt:&str)->String {
 }
 
 fn main() -> Result<()> {
-    
     let args = Args::parse();
     let start = std::time::Instant::now();
     let api = Api::new()?;
@@ -203,16 +197,17 @@ fn main() -> Result<()> {
     } else {
         Device::Cpu
     };
-    
+
     let dtype = if device.is_cuda() {
-        DType::BF16
+        // DType::BF16 // for newer GPUs
+        DType::F32 // for older GPUs capability <7.0
     } else {
         DType::F32
     };
     let vb = unsafe { VarBuilder::from_mmaped_safetensors(&filenames, dtype, &device)? };
-    let model =  {
-            let config: ConfigBase = serde_json::from_str(&std::fs::read_to_string(config_file)?)?;
-            ModelBase::new(&config, vb)?
+    let model = {
+        let config: ConfigBase = serde_json::from_str(&std::fs::read_to_string(config_file)?)?;
+        ModelBase::new(&config, vb)?
     };
 
     println!("loaded the model in {:?}", start.elapsed());
@@ -229,20 +224,22 @@ fn main() -> Result<()> {
         &device,
     );
     let ipc_name = args.ipc_name;
-    let (receiver,sender) = accept(ipc_name);
-    println!("{} server start!",model_id);
+    let (receiver, sender) = accept(ipc_name);
+    println!("{} server start!", model_id);
     loop {
         let msg = receiver.recv().unwrap();
         if let Ok(req) = serde_json::from_str::<Request>(msg.as_str()) {
             if req.cmd.eq("QUIT") {
-                    break;
+                break;
             }
-            let prompt = messages_chat_template(&req.msg_list,"你是源胖子开发的AI助手，你善于回答科普问题。");
-            
-            pipeline.run(&sender,prompt.as_str(), 1000usize)?;
+            let prompt = messages_chat_template(
+                &req.msg_list,
+                "你是源胖子开发的AI助手，你善于回答科普问题。",
+            );
+
+            pipeline.run(&sender, prompt.as_str(), 1000usize)?;
         }
-        
     }
-    
+
     Ok(())
 }
