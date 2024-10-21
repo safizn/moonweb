@@ -163,6 +163,7 @@ pub async fn master_server() {
     for server in get_working_servers().await.iter() {
         let model_id = &server.model_id;
         let program = get_program(server);
+        dbg!(&program);
         launch_worker(&program, model_id);
     }
 
@@ -207,8 +208,10 @@ fn launch_worker(program: &PathBuf, model_id: &String) {
         return;
     } else {
         println!(
-            "Worker process spawned - server {} ipc_name: {}",
-            model_id, ipc_name
+            "Worker process spawned - server {} ipc_name: {} command: {:?}",
+            model_id,
+            ipc_name,
+            e.unwrap()
         );
     }
 

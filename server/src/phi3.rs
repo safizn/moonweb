@@ -4,13 +4,13 @@ use crate::token_output_stream::TokenOutputStream;
 
 use candle_transformers::models::phi3::{Config as Phi3Config, Model as Phi3};
 
-use crate::data::{Message, Role};
 use crate::ipc::OutputStream;
 use crate::model::TextGenModel;
 use candle_core::utils::cuda_is_available;
 use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_nn::VarBuilder;
 use candle_transformers::generation::LogitsProcessor;
+use crate::data::{Message, Role};
 use hf_hub::{api::sync::Api, Repo, RepoType};
 use tokenizers::Tokenizer;
 

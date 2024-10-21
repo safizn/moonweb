@@ -19,7 +19,7 @@ The model services that have been implemented are as follows:
 - **microsoft/Phi-3-medium-4k-instruct**
 
 
-[![Moonweb Screen Recording Video](https://github.com/Lyn-liyuan/moonweb/blob/main/youtube--play.jpg?raw=true)](https://youtu.be/AfdswX82FOo "Moonweb Screen Recording Video")
+[![Moonweb Screen Recording Video](https://github.com/Lyn-liyuan/moonweb/blob/main/notes/youtube--play.jpg?raw=true)](https://youtu.be/AfdswX82FOo "Moonweb Screen Recording Video")
 
 **Quick Start**
 

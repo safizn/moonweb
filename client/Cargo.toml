@@ -1,31 +1,17 @@
 [package]
-name = "moonweb"
+name = "client"
 version = "0.1.0"
-authors = ["Lyn-liyuan <lyn@intellicloud.ai>"]
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "client"
+path = "src/bin/client.rs"
 
-[workspace]
-members = ["server", "client", "models/*"]
-
-[toolchain]
-channel = "nightly"
-
-[profile.dev]
-debug = true
-
-[profile.release]
-debug = false # whether to debug information during release builds
-
-
-[dev-dependencies]
-clap = "*"
-
+[lib]
+name = "client"
+path = "src/lib.rs"
 
 [dependencies]
-server = { path = "./server" }
-client = { path = "./client" }
 dioxus = { version = "0.5", features = ["web", "router"] }
 image-base64-wasm = "0.5.0"
 # Debug

@@ -1,6 +1,6 @@
-use crate::data::{Message, Request, Role};
 use crate::ipc::accept;
 use crate::model::load;
+use crate::data::{Message, Request, Role};
 use std::process;
 
 pub async fn worker_server(ipc_name: String, model_id: String, temp: f64, top_p: f64) {

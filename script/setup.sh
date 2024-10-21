@@ -85,5 +85,11 @@ setup() {
         echo export LD_LIBRARY_PATH=~/anaconda3/lib/:/usr/lib/wsl/lib:$LD_LIBRARY_PATH >> ~/.bashrc
 
     }
+
+    {
+        node -v
+        npm -v
+        tailwindcss 
+    }
 }
 

@@ -28,7 +28,8 @@ lazy_static! {
 }
 
 fn load_config() -> ServerConfig {
-    let mut file = fs::File::open("server-config.json").expect("Failed to read server.config!");
+    let mut file =
+        fs::File::open("config/server-config.json").expect("Failed to read server.config!");
     let mut contents = String::new();
     file.read_to_string(&mut contents)
         .expect("Failed to read server.config to string!");
