@@ -1,7 +1,7 @@
 use core::str;
 
+use crate::data::{Message, Role};
 use anyhow::{Error, Result};
-use crate::data::{Role,Message};
 use candle_core::utils::cuda_is_available;
 use candle_core::{DType, Device, Tensor};
 use candle_nn::VarBuilder;
@@ -9,13 +9,12 @@ use candle_transformers::generation::{LogitsProcessor, Sampling};
 use hf_hub::{api::sync::Api, Repo, RepoType};
 
 use candle_transformers::models::llama as model;
-use model::{Llama, LlamaConfig, Config};
+use model::{Config, Llama, LlamaConfig};
 
-use crate::token_output_stream::TokenOutputStream;
-use crate::model::TextGenModel;
 use crate::ipc::OutputStream;
+use crate::model::TextGenModel;
+use crate::token_output_stream::TokenOutputStream;
 use tokenizers::Tokenizer;
-
 
 const EOS_TOKEN: &str = "<|eot_id|>";
 
@@ -64,7 +63,12 @@ impl TextGeneration {
 }
 
 impl TextGenModel for TextGeneration {
-    fn run(&mut self, output:&dyn OutputStream, prompt: &str, sample_len: usize) -> Result<(), Error> {
+    fn run(
+        &mut self,
+        output: &dyn OutputStream,
+        prompt: &str,
+        sample_len: usize,
+    ) -> Result<(), Error> {
         self.tokenizer.clear();
         let mut tokens = self
             .tokenizer
@@ -104,19 +108,18 @@ impl TextGenModel for TextGeneration {
                 )?
             };
             index_pos += ctxt.len();
-    
+
             let next_token = self.logits_processor.sample(&logits)?;
             token_generated += 1;
             tokens.push(next_token);
-    
+
             if Some(next_token) == self.eos_token_id {
                 break;
             }
-            
+
             if let Some(t) = self.tokenizer.next_token(next_token)? {
                 output.write(t)?;
             }
-
         }
         output.end().unwrap();
         if let Some(rest) = self.tokenizer.decode_rest().map_err(Error::msg)? {
@@ -130,11 +133,11 @@ impl TextGenModel for TextGeneration {
         );
         Ok(())
     }
-    fn messages_chat_template(&self,msg_list: &Vec<Message>,system_prompt:&str)->String {
+    fn messages_chat_template(&self, msg_list: &Vec<Message>, system_prompt: &str) -> String {
         let mut history = String::new();
         history.push_str("<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n");
-        history.push_str(format!("{}<|eot_id|>",system_prompt).as_str());
-        
+        history.push_str(format!("{}<|eot_id|>", system_prompt).as_str());
+
         for msg in msg_list {
             if msg.role == Role::User {
                 history.push_str("<|start_header_id|>user<|end_header_id|>\n\n");
@@ -143,14 +146,11 @@ impl TextGenModel for TextGeneration {
             }
             history.push_str(msg.content.as_str());
             history.push_str("<|eot_id|>\n");
-            
         }
         history.push_str("<|start_header_id|>assistant<|end_header_id|>\n\n");
         history
     }
 }
-
-
 
 fn hub_load_safetensors(
     repo: &hf_hub::api::sync::ApiRepo,
@@ -182,22 +182,22 @@ fn hub_load_safetensors(
 //     load_model("meta-llama/Meta-Llama-3-8B-Instruct",0.6f64,0.9f64)
 // }
 
-
-
-pub fn load_model(model_id:&str, temp: f64,
-    top_p: f64,) -> impl TextGenModel {
-    
+pub fn load_model(model_id: &str, temp: f64, top_p: f64) -> impl TextGenModel {
     let revision = String::from("main");
-    
+
     let device = if cuda_is_available() {
         Device::new_cuda(0).expect("create cuda device failed!")
     } else {
         Device::Cpu
     };
-    
+
     let dtype = DType::F32;
     let api = Api::new().expect("create Api failed!");
-    let api = api.repo(Repo::with_revision(model_id.to_string(), RepoType::Model, revision));
+    let api = api.repo(Repo::with_revision(
+        model_id.to_string(),
+        RepoType::Model,
+        revision,
+    ));
 
     let tokenizer_filename = api
         .get("tokenizer.json")
@@ -221,7 +221,6 @@ pub fn load_model(model_id:&str, temp: f64,
 
     let eos_token_id = tokenizer.token_to_id(EOS_TOKEN);
 
-    
     TextGeneration::new(
         llama,
         tokenizer,

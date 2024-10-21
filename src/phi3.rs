@@ -4,17 +4,15 @@ use crate::token_output_stream::TokenOutputStream;
 
 use candle_transformers::models::phi3::{Config as Phi3Config, Model as Phi3};
 
-
-use candle_core::{DType, Device, IndexOp, Tensor};
+use crate::data::{Message, Role};
+use crate::ipc::OutputStream;
+use crate::model::TextGenModel;
 use candle_core::utils::cuda_is_available;
+use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_nn::VarBuilder;
 use candle_transformers::generation::LogitsProcessor;
 use hf_hub::{api::sync::Api, Repo, RepoType};
 use tokenizers::Tokenizer;
-use crate::model::TextGenModel;
-use crate::data::{Message,Role};
-use crate::ipc::OutputStream;
-
 
 pub struct TextGeneration {
     model: Phi3,
@@ -50,14 +48,17 @@ impl TextGeneration {
 }
 
 impl TextGenModel for TextGeneration {
-    
-
-    fn run(&mut self,output:&dyn OutputStream, prompt: &str, sample_len: usize) -> Result<(), Error> {
-        
+    fn run(
+        &mut self,
+        output: &dyn OutputStream,
+        prompt: &str,
+        sample_len: usize,
+    ) -> Result<(), Error> {
         println!("starting the inference loop");
         self.model.clear_kv_cache();
         self.tokenizer.clear();
-        let tokens = self.tokenizer
+        let tokens = self
+            .tokenizer
             .tokenizer()
             .encode(prompt, true)
             .map_err(Error::msg)?;
@@ -71,16 +72,28 @@ impl TextGenModel for TextGeneration {
             Some(token) => token,
             None => anyhow::bail!("cannot find the endoftext token"),
         };
-        
+
         let start_gen = std::time::Instant::now();
         let mut pos = 0;
         //let mut content = String::new();
         for index in 0..sample_len {
             let context_size = if index > 0 { 1 } else { tokens.len() };
             let ctxt = &tokens[tokens.len().saturating_sub(context_size)..];
-            let input = Tensor::new(ctxt, &self.device).expect("create input tensor failed!").unsqueeze(0).expect("unsqueeze failed!");
-            let logits =self.model.forward(&input, pos).expect(format!("model forward failed at {}",index).as_str()).i((.., 0, ..)).expect("i failed!");
-            let logits = logits.squeeze(0).expect("logits.squeeze failed!").to_dtype(DType::F32).expect("to dtype failed!");
+            let input = Tensor::new(ctxt, &self.device)
+                .expect("create input tensor failed!")
+                .unsqueeze(0)
+                .expect("unsqueeze failed!");
+            let logits = self
+                .model
+                .forward(&input, pos)
+                .expect(format!("model forward failed at {}", index).as_str())
+                .i((.., 0, ..))
+                .expect("i failed!");
+            let logits = logits
+                .squeeze(0)
+                .expect("logits.squeeze failed!")
+                .to_dtype(DType::F32)
+                .expect("to dtype failed!");
             let logits = if self.repeat_penalty == 1. {
                 logits
             } else {
@@ -92,14 +105,21 @@ impl TextGenModel for TextGeneration {
                 )?
             };
 
-            let next_token = self.logits_processor.sample(&logits).expect("logits processor sample failed！");
+            let next_token = self
+                .logits_processor
+                .sample(&logits)
+                .expect("logits processor sample failed！");
             tokens.push(next_token);
             generated_tokens += 1;
             if next_token == eos_token {
                 break;
             }
-           
-            if let Some(t) = self.tokenizer.next_token(next_token).expect("tokenizer netx_token failed!") {
+
+            if let Some(t) = self
+                .tokenizer
+                .next_token(next_token)
+                .expect("tokenizer netx_token failed!")
+            {
                 output.write(t)?
             }
             pos += context_size;
@@ -112,8 +132,8 @@ impl TextGenModel for TextGeneration {
         );
         Ok(())
     }
-    
-    fn messages_chat_template(&self,msg_list: &Vec<Message>,system_prompt:&str)->String {
+
+    fn messages_chat_template(&self, msg_list: &Vec<Message>, system_prompt: &str) -> String {
         let mut history = String::new();
         history.push_str(system_prompt);
         history.push_str("\n");
@@ -158,33 +178,48 @@ fn hub_load_safetensors(
 }
 
 pub fn load() -> impl TextGenModel {
-   let model_id = String::from("microsoft/Phi-3-medium-4k-instruct");
-   let revision = String::from("main");
-   let api = Api::new().expect("hf_hub api load failed!");
-   let repo = api.repo(Repo::with_revision(model_id, RepoType::Model, revision));
-   let tokenizer_filename = repo.get("tokenizer.json").expect("load tokenizer.json failed !");
-   let filenames = hub_load_safetensors(
-                    &repo,
-         "model.safetensors.index.json",
-   ).expect("hub_load_safetensors failed!");
-   
-   let tokenizer = Tokenizer::from_file(tokenizer_filename).map_err(Error::msg).expect("Tokenizer from file failed!");
-   let device = if cuda_is_available() { Device::new_cuda(0).expect("create cuda device failed!") } else { Device::Cpu };
-   let dtype =  if device.is_cuda() {DType::BF16} else {DType::F32};
-   let vb = unsafe { VarBuilder::from_mmaped_safetensors(&filenames, dtype, &device).expect("var builder failed!") };
-   let config_filename = repo.get("config.json").expect("get config filename failed!");
-   let config = std::fs::read_to_string(config_filename).expect("Read to string failed!");
-   let config: Phi3Config = serde_json::from_str(&config).expect("load Phi3Config failed!");
-   let phi3 = Phi3::new(&config, vb).expect("create Phi3 failed!");
-   
-   TextGeneration::new(
- phi3,
+    let model_id = String::from("microsoft/Phi-3-medium-4k-instruct");
+    let revision = String::from("main");
+    let api = Api::new().expect("hf_hub api load failed!");
+    let repo = api.repo(Repo::with_revision(model_id, RepoType::Model, revision));
+    let tokenizer_filename = repo
+        .get("tokenizer.json")
+        .expect("load tokenizer.json failed !");
+    let filenames = hub_load_safetensors(&repo, "model.safetensors.index.json")
+        .expect("hub_load_safetensors failed!");
+
+    let tokenizer = Tokenizer::from_file(tokenizer_filename)
+        .map_err(Error::msg)
+        .expect("Tokenizer from file failed!");
+    let device = if cuda_is_available() {
+        Device::new_cuda(0).expect("create cuda device failed!")
+    } else {
+        Device::Cpu
+    };
+    let dtype = if device.is_cuda() {
+        DType::BF16
+    } else {
+        DType::F32
+    };
+    let vb = unsafe {
+        VarBuilder::from_mmaped_safetensors(&filenames, dtype, &device)
+            .expect("var builder failed!")
+    };
+    let config_filename = repo
+        .get("config.json")
+        .expect("get config filename failed!");
+    let config = std::fs::read_to_string(config_filename).expect("Read to string failed!");
+    let config: Phi3Config = serde_json::from_str(&config).expect("load Phi3Config failed!");
+    let phi3 = Phi3::new(&config, vb).expect("create Phi3 failed!");
+
+    TextGeneration::new(
+        phi3,
         tokenizer,
         299792458u64,
         Some(0.7f64),
         Some(0.95f64),
         2.8f32,
         16usize,
-        &device)
-   
+        &device,
+    )
 }

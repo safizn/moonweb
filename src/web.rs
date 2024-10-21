@@ -1,9 +1,9 @@
 #![allow(non_snake_case, unused)]
 extern crate image_base64_wasm;
 
+use crate::authorization::{get_user, show_login, LoginBox};
 use crate::data::{Message, Role, SelectOption, WebUser};
 use crate::web_state::{Session, Store, TempSession};
-use crate::authorization::{LoginBox,get_user,show_login};
 use dioxus::prelude::*;
 use dioxus_logger::tracing::{info, Level};
 use futures::StreamExt;
@@ -119,7 +119,7 @@ fn ModelConfig(
                                         let mut sess = session.write();
                                         sess.system_prompt = value;
                                     }
-                                    
+
                                 }
                             }
                         }
@@ -187,15 +187,14 @@ fn sendMsg(
     mut modelOptions: Signal<Vec<SelectOption>>,
     mut send_disabled: Signal<bool>,
 ) {
-    
     if msg != "" {
         use reqwest::Client;
         let token = match get_user() {
-            Some(user)=> match user.auth_key {
+            Some(user) => match user.auth_key {
                 Some(key) => key,
                 None => "".to_string(),
             },
-            None => "".to_string()
+            None => "".to_string(),
         };
         let mut history = use_context::<Signal<Vec<Message>>>();
         let id = history().len();
@@ -232,7 +231,7 @@ fn sendMsg(
                 let mut message = &mut history.write()[id];
                 message.content.push_str(text.as_str());
                 message.loading = false;
-                
+
                 let response = Client::new()
                     .get(format!("{}models", url))
                     .send()
@@ -314,16 +313,16 @@ fn sendMsg(
     }
 }
 
-pub fn switch_session(id: &str, mut model_id: Signal<String>,mut system_prompt: Signal<String>) {
+pub fn switch_session(id: &str, mut model_id: Signal<String>, mut system_prompt: Signal<String>) {
     let mut session = use_context::<Signal<Session>>();
     let mut temp_session = use_context::<Signal<TempSession>>();
     let mut messages = use_context::<Signal<Vec<Message>>>();
     let current_id = session.read().id.clone();
-    if current_id != id { 
+    if current_id != id {
         let mut store = Store::new().unwrap();
         // current session don't store.
         if store.get_session(current_id.as_str()).is_none() {
-             temp_session.set(TempSession::new(&session()));
+            temp_session.set(TempSession::new(&session()));
         }
         // load target session from store
         if let Some(new_session) = store.get_session(id) {
@@ -350,7 +349,7 @@ pub fn switch_session(id: &str, mut model_id: Signal<String>,mut system_prompt: 
                 name: temp_session.read().name.clone(),
                 mode_id: temp_session.read().mode_id.clone(),
                 system_prompt: temp_session.read().system_prompt.clone(),
-                history:  Some(Vec::<Message>::new()),
+                history: Some(Vec::<Message>::new()),
             };
             messages.set(Vec::<Message>::new());
             model_id.set(new_session.mode_id.clone());
@@ -359,11 +358,14 @@ pub fn switch_session(id: &str, mut model_id: Signal<String>,mut system_prompt: 
             session.set(new_session);
         }
     }
-    
 }
 
 #[component]
-pub fn Conversations(mut model_id: Signal<String>, mut system_prompt: Signal<String>, send_disabled: Signal<bool>) -> Element {
+pub fn Conversations(
+    mut model_id: Signal<String>,
+    mut system_prompt: Signal<String>,
+    send_disabled: Signal<bool>,
+) -> Element {
     let mut do_delete_conv = use_signal(|| false);
     let session = use_context::<Signal<Session>>();
     let session_value = session();
@@ -380,13 +382,16 @@ pub fn Conversations(mut model_id: Signal<String>, mut system_prompt: Signal<Str
                 id: temp_session.read().id.clone(),
                 name: temp_session.read().name.clone(),
                 mode_id: temp_session.read().mode_id.clone(),
-                system_prompt: temp_session.read().system_prompt.clone(), 
+                system_prompt: temp_session.read().system_prompt.clone(),
                 history: Some(Vec::<Message>::new()),
             })
         }
     }
     session_list.reverse();
-    let items: Vec<_> = session_list.iter().map(|sess| {(sess.id.clone(),sess.id.clone(),sess.name.clone())}).collect();
+    let items: Vec<_> = session_list
+        .iter()
+        .map(|sess| (sess.id.clone(), sess.id.clone(), sess.name.clone()))
+        .collect();
     rsx!(
         div { class: "w-1/5 shadow-lg rounded-lg text-sm font-medium text-gray-500  md:me-4 mb-4 md:mb-0",
               style: "height:98%;",
@@ -410,7 +415,7 @@ pub fn Conversations(mut model_id: Signal<String>, mut system_prompt: Signal<Str
                                 },
                                 "{name}"
                             }
-                            
+
                         }
                     } else {
                         div { class:"flex items-center px-4 py-3 rounded-lg hover:text-gray-900 bg-gray-50 hover:bg-gray-100 w-full dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white",
@@ -424,7 +429,7 @@ pub fn Conversations(mut model_id: Signal<String>, mut system_prompt: Signal<Str
                                 },
                                 "{name}"
                             }
-                            
+
                             button {
                                 r#type: "button",
                                 class: "text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white",
@@ -464,9 +469,9 @@ pub fn Conversations(mut model_id: Signal<String>, mut system_prompt: Signal<Str
     )
 }
 
-fn new_conversation(mut session: Signal<Session>,mut messages: Signal<Vec<Message>>) {
+fn new_conversation(mut session: Signal<Session>, mut messages: Signal<Vec<Message>>) {
     let mut store = Store::new().unwrap();
-    
+
     if store.get_session(session().id.as_str()).is_some() {
         session.set(store.new_session());
         messages.set(Vec::<Message>::new());
@@ -660,7 +665,7 @@ pub fn app() -> Element {
                         let new_session = session.read();
                         model_id.set(new_session.mode_id.clone());
                         system_prompt.set(new_session.system_prompt.clone());
-                        
+
                     },
                     svg {
                         "stroke": "currentColor",

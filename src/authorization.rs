@@ -36,7 +36,11 @@ pub fn get_user() -> Option<WebUser> {
     return None;
 }
 
-async fn do_login(endpoint: Signal<String>, mut logined: Signal<bool>,mut login_failed: Signal<bool>) {
+async fn do_login(
+    endpoint: Signal<String>,
+    mut logined: Signal<bool>,
+    mut login_failed: Signal<bool>,
+) {
     if let Some(window) = window() {
         if let Some(document) = window.document() {
             let role = if let Ok(user) = get_input_element_by_id(&document, "role-1") {
@@ -84,6 +88,7 @@ async fn do_login(endpoint: Signal<String>, mut logined: Signal<bool>,mut login_
                     .unwrap();
                 if response.success {
                     logined.set(true);
+
                     login_failed.set(false);
                     let user =
                         WebUser::make(role.parse().unwrap(), response.auth_key, response.expire);
@@ -128,12 +133,12 @@ fn is_signin() -> bool {
     return false;
 }
 
-pub fn show_login(closeable:bool) {
+pub fn show_login(closeable: bool) {
     if let Some(window) = window() {
         let show_login_js = Reflect::get(&window, &JsValue::from_str("showLogin"))
-        .unwrap()
-        .dyn_into::<js_sys::Function>()
-        .unwrap();
+            .unwrap()
+            .dyn_into::<js_sys::Function>()
+            .unwrap();
         show_login_js.call0(&JsValue::from_bool(closeable)).unwrap();
     }
 }
@@ -141,19 +146,18 @@ pub fn show_login(closeable:bool) {
 pub fn close_login() {
     if let Some(window) = window() {
         let close_login_js = Reflect::get(&window, &JsValue::from_str("closeLogin"))
-        .unwrap()
-        .dyn_into::<js_sys::Function>()
-        .unwrap();
+            .unwrap()
+            .dyn_into::<js_sys::Function>()
+            .unwrap();
         close_login_js.call0(&JsValue::NULL).unwrap();
     }
 }
-
 
 #[component]
 pub fn LoginBox(endpoint: Signal<String>) -> Element {
     let logined = use_signal(|| is_signin());
     let login_failed = use_signal(|| false);
-    use_effect(move || {        
+    use_effect(move || {
         if logined() {
             close_login();
         } else {

@@ -30,14 +30,14 @@ pub struct Message {
 }
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Request {
-    pub cmd:String,
-    pub system_prompt:String,
-    pub msg_list:Vec<Message>,
+    pub cmd: String,
+    pub system_prompt: String,
+    pub msg_list: Vec<Message>,
 }
 
 #[derive(Props, Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct SelectOption {
-    pub text:String,
+    pub text: String,
     pub selected: bool,
     pub value: String,
 }
@@ -63,14 +63,14 @@ pub struct WebUser {
 }
 
 impl WebUser {
-    pub fn new() ->Self {
+    pub fn new() -> Self {
         WebUser {
             role: Role::User,
             auth_key: None,
             expire: None,
         }
     }
-    pub fn make(role:Role,key:String,expire: String) -> Self {
+    pub fn make(role: Role, key: String, expire: String) -> Self {
         WebUser {
             role: role,
             auth_key: Some(key),
@@ -78,5 +78,3 @@ impl WebUser {
         }
     }
 }
-
-

@@ -1,7 +1,7 @@
 use crate::data::Message;
 use dioxus::prelude::*;
-use serde::{Deserialize, Serialize};
 use js_sys::Date;
+use serde::{Deserialize, Serialize};
 use web_sys::{window, Storage};
 
 #[derive(Props, Clone, PartialEq, Debug, Serialize, Deserialize)]
@@ -67,7 +67,14 @@ impl Store {
         let id = format!("id_{}_", Date::now());
         let session = Session {
             id: id.clone(),
-            name: format!("{}/{}/{} {}:{}", time.get_full_year()-2000,time.get_month()+1,time.get_date(),time.get_hours(),time.get_minutes()),
+            name: format!(
+                "{}/{}/{} {}:{}",
+                time.get_full_year() - 2000,
+                time.get_month() + 1,
+                time.get_date(),
+                time.get_hours(),
+                time.get_minutes()
+            ),
             system_prompt: "".to_string(),
             mode_id: "meta-llama/Meta-Llama-3-8B-Instruct".to_string(),
             history: None,

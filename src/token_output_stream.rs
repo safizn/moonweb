@@ -81,12 +81,11 @@ impl TokenOutputStream {
                 pure_text.push(ch)
             }
         }
-        if pure_text.len()>0 {
+        if pure_text.len() > 0 {
             Ok(Some(pure_text))
         } else {
             Ok(None)
         }
-        
     }
 
     pub fn get_token(&self, token_s: &str) -> Option<u32> {
