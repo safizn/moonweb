@@ -66,5 +66,24 @@ setup() {
         
     }
 
+
+    {
+        # # Setup
+        # CUDA_PATH="/usr/local/cuda-12.2"
+        # export PATH="$PATH:$CUDA_PATH/bin"
+        # export LD_LIBRARY_PATH="$CUDA_PATH/lib64:$LD_LIBRARY_PATH"
+
+        # # Write to ~/.bashrc
+        # echo "export PATH=\"$PATH:$CUDA_PATH/bin\"" >> ~/.bashrc
+        # echo "export LD_LIBRARY_PATH=\"$CUDA_PATH/lib64:\$LD_LIBRARY_PATH\"" >> ~/.bashrc
+
+
+        export PYO3_PYTHON=$(which python)
+        export LD_LIBRARY_PATH=~/anaconda3/lib/:/usr/lib/wsl/lib:$LD_LIBRARY_PATH
+
+        echo export PYO3_PYTHON=$(which python) >> ~/.bashrc
+        echo export LD_LIBRARY_PATH=~/anaconda3/lib/:/usr/lib/wsl/lib:$LD_LIBRARY_PATH >> ~/.bashrc
+
+    }
 }
 

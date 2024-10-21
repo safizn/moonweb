@@ -1,0 +1,24 @@
+{
+  "ports": [
+    11000,
+    11001,
+    11002
+  ],
+  "master_addr": "0.0.0.0:12081",
+  "working_servers": [
+    {
+      "model_id": "black-forest-labs/FLUX.1-schnell",
+      "program": "/home/unixuser/code/moonweb/models/flux/target/release/flux",
+      "temp": 0.6,
+      "top_p": 0.9
+    }
+  ],
+  "servers": [
+    {
+      "model_id": "black-forest-labs/FLUX.1-schnell",
+      "program": "/home/unixuser/code/moonweb/models/flux/target/release/flux",
+      "temp": 0.6,
+      "top_p": 0.9
+    }
+  ]
+}

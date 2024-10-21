@@ -176,7 +176,6 @@ pub async fn master_server() {
     let app = Router::new()
         .route("/api/chat", post(call_worker))
         .route("/api/load", post(call_command))
-        
         .route("/api/models", get(modal_list))
         .route("/api/signin", post(signin))
         .layer(DefaultBodyLimit::disable())
@@ -190,6 +189,7 @@ pub async fn master_server() {
 
 fn launch_worker(program: &PathBuf, model_id: &String) {
     let (one_shot_serv, ipc_name) = IpcOneShotServer::new().expect("Failed to ipc one shot server");
+
     let e = Command::new(program.as_os_str())
         .arg("--server")
         .arg("Worker")
@@ -199,8 +199,17 @@ fn launch_worker(program: &PathBuf, model_id: &String) {
         .arg(ipc_name.as_str())
         .spawn();
     if e.is_err() {
-        println!("Worker server {} failed to start", model_id);
+        println!(
+            "Worker server {} failed to start. ipc_name: {}",
+            model_id, ipc_name
+        );
+        dbg!(program.as_os_str());
         return;
+    } else {
+        println!(
+            "Worker process spawned - server {} ipc_name: {}",
+            model_id, ipc_name
+        );
     }
 
     let (_, sender): (_, IpcSender<String>) =
@@ -281,6 +290,8 @@ pub async fn signin(Json(request): Json<AuthRequest>) -> Json<AuthResponse> {
         auth_key: String::new(),
         expire: String::new(),
     };
+    dioxus_logger::tracing::info!("sign-ing @ master_server.rs");
+
     let response = match request.role {
         Role::User => {
             if request.token
@@ -319,62 +330,62 @@ pub async fn signin(Json(request): Json<AuthRequest>) -> Json<AuthResponse> {
     Json::from(response)
 }
 
-pub async fn call_command(AuthBearer(token): AuthBearer,cmd: String) -> String {
+pub async fn call_command(AuthBearer(token): AuthBearer, cmd: String) -> String {
     if valid_admin_token(token.as_str()) {
-    let commands: Vec<&str> = cmd
-        .split(|c: char| c.is_whitespace())
-        .filter(|&s| !s.is_empty())
-        .collect();
-    if commands.len() > 1 {
-        match commands[0] {
-            "/load" => {
-                let model_id = commands[1].to_string();
+        let commands: Vec<&str> = cmd
+            .split(|c: char| c.is_whitespace())
+            .filter(|&s| !s.is_empty())
+            .collect();
+        if commands.len() > 1 {
+            match commands[0] {
+                "/load" => {
+                    let model_id = commands[1].to_string();
 
-                match get_working_servers()
-                    .await
-                    .iter()
-                    .find(|ser| ser.model_id == model_id)
-                {
-                    None => {
-                        if let Some(server) = get_servers()
-                            .await
-                            .iter()
-                            .find(|ser| ser.model_id == model_id)
-                        {
-                            let program = get_program(server);
-                            launch_worker(&program, &model_id);
-                            new_working_server(server.clone()).await;
-                            format!("{} server start!", model_id)
-                        } else {
-                            format!("{} is not exist!", model_id)
+                    match get_working_servers()
+                        .await
+                        .iter()
+                        .find(|ser| ser.model_id == model_id)
+                    {
+                        None => {
+                            if let Some(server) = get_servers()
+                                .await
+                                .iter()
+                                .find(|ser| ser.model_id == model_id)
+                            {
+                                let program = get_program(server);
+                                launch_worker(&program, &model_id);
+                                new_working_server(server.clone()).await;
+                                format!("{} server start!", model_id)
+                            } else {
+                                format!("{} is not exist!", model_id)
+                            }
                         }
+                        Some(_) => format!("{} server is runing!", model_id),
                     }
-                    Some(_) => format!("{} server is runing!", model_id),
+                }
+                "/unload" => {
+                    let model_id = commands[1].to_string();
+                    if let Some((_, server)) = WORKER_HUB.remove(model_id.as_str()) {
+                        let req = Request {
+                            cmd: "QUIT".to_string(),
+                            system_prompt: "".to_string(),
+                            msg_list: Vec::<Message>::new(),
+                        };
+                        server.sender.send((None, req)).await.unwrap();
+                        remove_working_server(model_id.as_str()).await;
+                        format!("{} server stop!", model_id)
+                    } else {
+                        format!("{} server is not runing", model_id)
+                    }
+                }
+                _ => {
+                    format!("Command {} is not exist", commands[0])
                 }
             }
-            "/unload" => {
-                let model_id = commands[1].to_string();
-                if let Some((_, server)) = WORKER_HUB.remove(model_id.as_str()) {
-                    let req = Request {
-                        cmd: "QUIT".to_string(),
-                        system_prompt: "".to_string(),
-                        msg_list: Vec::<Message>::new(),
-                    };
-                    server.sender.send((None, req)).await.unwrap();
-                    remove_working_server(model_id.as_str()).await;
-                    format!("{} server stop!", model_id)
-                } else {
-                    format!("{} server is not runing", model_id)
-                }
-            }
-            _ => {
-                format!("Command {} is not exist", commands[0])
-            }
+        } else {
+            format!("{} is error command!", cmd)
         }
     } else {
-        format!("{} is error command!", cmd)
-    }
-   } else {
         String::from("Authentication failed. Only administrators can execute commands.")
-   }
+    }
 }

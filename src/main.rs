@@ -59,15 +59,19 @@ fn main() {
     let args = Args::parse();
     let server_type = args.server.unwrap_or_else(|| ServerNode::Web);
 
+    dioxus_logger::init(Level::TRACE).expect("logger failed to init");
+
     match server_type {
         ServerNode::Web => {
-            dioxus_logger::init(Level::INFO).expect("logger failed to init");
+            info!("Running at ServerNode::Web");
 
             launch(app);
         }
         ServerNode::Master => {
             #[cfg(not(target_arch = "wasm32"))]
             {
+                info!("Running at ServerNode::Master");
+
                 let runtime = tokio::runtime::Runtime::new().expect("Create runtime failed!");
                 runtime.block_on(master_server());
             }
@@ -75,6 +79,8 @@ fn main() {
         ServerNode::Worker => {
             #[cfg(not(target_arch = "wasm32"))]
             {
+                info!("Running at ServerNode::Worker");
+
                 let model_id = args
                     .model_id
                     .unwrap_or_else(|| "meta-llama/Meta-Llama-3-8B-Instruct".into());

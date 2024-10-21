@@ -44,7 +44,7 @@ build() {
     # conda activate python-llm-virtual-env
     export PYO3_PYTHON=$(which python)
     # export LD_LIBRARY_PATH=/home/unixuser/miniconda3/envs/python-llm-virtual-env/lib/:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH=/home/unixuser/anaconda3/lib/:/usr/lib/wsl/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=~/anaconda3/lib/:/usr/lib/wsl/lib:$LD_LIBRARY_PATH
     ./script.sh build_models
     
     dx build --release
