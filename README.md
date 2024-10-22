@@ -18,6 +18,10 @@ The model services that have been implemented are as follows:
 - **Qwen/Qwen2-1.5B-Instruct**
 - **microsoft/Phi-3-medium-4k-instruct**
 
+## Tokens: 
+- const ADMIN_TOKEN: &str = "5bfc427e-c7ca-4612-a445-76d7d141eds";
+- const USER_TOKEN: &str = "d272c71d-3579-4c85-b6cd-1f144190c98a";
+
 
 [![Moonweb Screen Recording Video](https://github.com/Lyn-liyuan/moonweb/blob/main/notes/youtube--play.jpg?raw=true)](https://youtu.be/AfdswX82FOo "Moonweb Screen Recording Video")
 

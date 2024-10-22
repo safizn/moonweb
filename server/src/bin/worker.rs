@@ -68,7 +68,7 @@ fn main() {
 
         let model_id = args
             .model_id
-            .unwrap_or_else(|| "meta-llama/Meta-Llama-3-8B-Instruct".into());
+            .unwrap_or_else(|| "Qwen/Qwen2-7B-Instruct".into());
         let temp = args.temp.unwrap_or_else(|| 0.6f64);
         let top_p = args.top_p.unwrap_or_else(|| 0.9f64);
         let ipc_name = args.ipc_name.unwrap();

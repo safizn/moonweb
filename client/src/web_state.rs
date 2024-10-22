@@ -76,7 +76,7 @@ impl Store {
                 time.get_minutes()
             ),
             system_prompt: "".to_string(),
-            mode_id: "meta-llama/Meta-Llama-3-8B-Instruct".to_string(),
+            mode_id: "Qwen/Qwen2-7B-Instruct".to_string(),
             history: None,
         };
         session

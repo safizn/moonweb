@@ -43,12 +43,25 @@ fn save_config(config: &ServerConfig) {
 }
 
 pub(crate) fn get_program(server: &WorkerServer) -> PathBuf {
-    let program = if server.program == "self" {
-        env::current_exe().expect("Failed to determine the current executable path")
+    let exe_path = env::current_exe().expect("Failed to determine the current executable path");
+    let cwd = exe_path
+        .parent()
+        .expect("Failed to get the parent directory of the current executable path")
+        .to_path_buf();
+    let mut path = PathBuf::from(server.program.clone());
+
+    let p = if path.to_str().unwrap() == "self" {
+        cwd.join("worker")
+    } else if path.is_relative() {
+        cwd.join(path)
     } else {
-        PathBuf::from(server.program.clone())
+        let mut path = PathBuf::from(server.program.clone());
+        path.canonicalize().unwrap()
     };
-    program
+
+    println!("path = {}", p.to_str().unwrap());
+
+    p
 }
 
 pub(crate) async fn get_working_servers() -> Vec<WorkerServer> {

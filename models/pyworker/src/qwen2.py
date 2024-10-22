@@ -25,7 +25,8 @@ def run(ipc_name,model_id):
           model_id,
           torch_dtype="auto",
           device_map="auto",
-          attn_implementation="flash_attention_2",
+        #   attn_implementation="flash_attention_2",
+          attn_implementation="sdpa" # implementation using torch.nn.functional.scaled_dot_product_attention 
     )
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     streamer = IpcStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True,ipc=ipc)
@@ -48,7 +49,6 @@ def run(ipc_name,model_id):
         )
         model_inputs = tokenizer([text], return_tensors="pt").to(device)
         
-        print("model.generate!!")
         model.generate(
             model_inputs.input_ids,
             

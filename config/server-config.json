@@ -7,46 +7,46 @@
   "master_addr": "0.0.0.0:12081",
   "working_servers": [
     {
-      "model_id": "black-forest-labs/FLUX.1-schnell",
-      "program": "/home/unixuser/code/moonweb/models/flux/target/release/flux",
-      "temp": 0.6,
-      "top_p": 0.9
-    },
-    {
       "model_id": "Qwen/Qwen2-7B-Instruct",
-      "program": "/home/unixuser/code/moonweb/models/pyworker/target/release/pyworker",
+      "program": "./pyworker",
       "temp": 0.6,
       "top_p": 0.9
     }
   ],
   "servers": [
     {
-      "model_id": "black-forest-labs/FLUX.1-schnell",
-      "program": "/home/unixuser/code/moonweb/models/flux/target/release/flux",
-      "temp": 0.6,
-      "top_p": 0.9
-    },
-    {
-      "model_id": "lmms-lab/llama3-llava-next-8b",
-      "program": "/home/unixuser/code/moonweb/models/llava/target/release/llava",
-      "temp": 0.6,
-      "top_p": 0.9
-    },
-    {
       "model_id": "Qwen/Qwen2-7B-Instruct",
-      "program": "/home/unixuser/code/moonweb/models/pyworker/target/release/pyworker",
-      "temp": 0.6,
-      "top_p": 0.9
-    },
-    {
-      "model_id": "Qwen/Qwen2-1.5B-Instruct",
-      "program": "/home/unixuser/code/moonweb/models/qwen/target/release/qwen",
+      "program": "./pyworker",
       "temp": 0.6,
       "top_p": 0.9
     },
     {
       "model_id": "meta-llama/Meta-Llama-3-8B-Instruct",
       "program": "self",
+      "temp": 0.6,
+      "top_p": 0.9
+    },
+    {
+      "model_id": "black-forest-labs/FLUX.1-schnell",
+      "program": "./flux",
+      "temp": 0.6,
+      "top_p": 0.9
+    },
+    {
+      "model_id": "Qwen/Qwen2-7B-Instruct",
+      "program": "./pyworker",
+      "temp": 0.6,
+      "top_p": 0.9
+    },
+    {
+      "model_id": "Qwen/Qwen2-1.5B-Instruct",
+      "program": "./qwen",
+      "temp": 0.6,
+      "top_p": 0.9
+    },
+    {
+      "model_id": "lmms-lab/llama3-llava-next-8b",
+      "program": "./llava",
       "temp": 0.6,
       "top_p": 0.9
     },
@@ -58,7 +58,7 @@
     },
     {
       "model_id": "yuanli/moonmodel",
-      "program": "/home/unixuser/code/moonweb/models/moonmodel/target/release/moonmodel",
+      "program": "./moonmodel",
       "temp": 0.6,
       "top_p": 0.9
     }

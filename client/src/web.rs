@@ -499,7 +499,7 @@ pub fn app() -> Element {
         None
     };
 
-    let mut model_id = use_signal(|| String::from("meta-llama/Meta-Llama-3-8B-Instruct"));
+    let mut model_id = use_signal(|| String::from("Qwen/Qwen2-7B-Instruct"));
     let mut endpoint = match href {
         Some(url) => use_signal(|| String::from(url)),
         None => use_signal(|| String::from("http://localhost:10201/api/")),
